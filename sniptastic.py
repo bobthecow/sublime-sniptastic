@@ -1,10 +1,12 @@
 import sublime, sublime_plugin
-import os
+import os, re
 import plistlib
 from xml.etree import ElementTree
 from zipfile import ZipFile
 
 snippets = []
+
+whitespace = re.compile('\s+')
 
 class Snippet:
 	def __init__(self, desc, content, tab, scopes):
@@ -12,6 +14,45 @@ class Snippet:
 		self.code = content
 		self.tab = tab
 		self.scopes = scopes
+	
+	def preview(self):
+		preview = ''
+		code = self.code
+		l = len(code)
+		i = 0
+		escape = False
+		brackets = 0
+		while i < l:
+			c = code[i]
+			i += 1
+			if c == '$' and not escape:
+				if i < l:
+					n = code[i]
+					if n.isdigit() or n == '{':
+						if n.isdigit():
+							i += 1
+							while i < l and code[i].isdigit():
+								i += 1
+						else:
+							brackets += 1
+							while i < l and code[i] != ':':
+								i += 1
+
+							i += 1
+			elif c == '}' and brackets > 0 and not escape:
+				brackets -= 1
+			elif c == '\\' and not escape:
+				escape = True
+			else:
+				escape = False
+				preview += c
+
+		preview = whitespace.sub(' ', preview).strip()
+		word_boundary = preview[:60].rsplit(' ', 1)[0]
+		if len(word_boundary) > 50 or len(preview) < 50:
+			return word_boundary
+		else:
+			return preview[:60]
 
 def parse_snippet(f, ext):
 	if ext == '.sublime-snippet':
@@ -95,7 +136,7 @@ class Sniptastic(sublime_plugin.TextCommand):
 				if scope in scopes:
 					candidates.append(s)
 
-		items = [s.desc for s in candidates]
+		items = [[s.desc, s.preview()] for s in candidates]
 
 		def callback(idx):
 			if idx == -1: return # -1 means the menu was canceled
