@@ -39,7 +39,7 @@ class Snippet:
 								i += 1
 						else:
 							brackets += 1
-							while i < l and code[i] != ':':
+							while i < l and code[i] not in ':}':
 								i += 1
 
 							i += 1
@@ -126,7 +126,7 @@ find_snippets()
 class Sniptastic(sublime_plugin.TextCommand):
 	def run(self, edit):
 		view = self.view
-		names = self.view.scope_name(self.view.sel()[0].b)
+		names = self.view.scope_name(view.sel()[0].b)
 		scopes = []
 		for name in names.split(' '):
 			scope = []
@@ -144,6 +144,6 @@ class Sniptastic(sublime_plugin.TextCommand):
 
 		def callback(idx):
 			if idx == -1: return # -1 means the menu was canceled
-			self.view.run_command('insert_snippet', {'contents':candidates[idx].code})
+			view.run_command('insert_snippet', {'contents':candidates[idx].code})
 
 		view.window().show_quick_panel(items, callback)
