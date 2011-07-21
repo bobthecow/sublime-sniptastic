@@ -2,6 +2,7 @@ import sublime, sublime_plugin
 import os
 import plistlib
 from xml.etree import ElementTree
+from zipfile import ZipFile
 
 snippets = []
 
@@ -12,10 +13,9 @@ class Snippet:
 		self.tab = tab
 		self.scopes = scopes
 
-def parse_snippet(path):
-	ext = os.path.splitext(path)[-1]
+def parse_snippet(f, ext):
 	if ext == '.sublime-snippet':
-		tree = ElementTree.parse(path)
+		tree = ElementTree.parse(f)
 
 		desc = tree.find('description').text
 		content = tree.find('content').text
@@ -23,7 +23,7 @@ def parse_snippet(path):
 		scope = tree.find('scope').text.split(', ')
 
 	elif ext == '.tmSnippet':
-		plist = plistlib.readPlist(path)
+		plist = plistlib.readPlist(f)
 		desc = plist['name']
 		content = plist['content']
 		trigger = plist['tabTrigger']
@@ -35,14 +35,34 @@ def find_snippets():
 	global snippets
 
 	new_snippets = []
+	# Packages folder
 	for root, dirs, files in os.walk(sublime.packages_path()):
 		for name in files:
 			try:
 				ext = os.path.splitext(name)[-1]
 				if ext in ('.sublime-snippet', '.tmSnippet'):
 					path = os.path.join(root, name)
-					new_snippets.append(parse_snippet(path))
+					f = open(path, 'rb')
+					new_snippets.append(parse_snippet(f, ext))
+					f.close()
 
+			except:
+				pass
+	
+	# Installed Packages folder
+	for root, dirs, files in os.walk(sublime.installed_packages_path()):
+		for name in files:
+			try:
+				ext = os.path.splitext(name)[-1]
+				if ext == '.sublime-package':
+					path = os.path.join(root, name)
+					zipf = ZipFile(path, 'r')
+					for name in zipf.namelist():
+						ext = os.path.splitext(name)[-1]
+						if ext in ('.sublime-snippet', '.tmSnippet'):
+							f = zipf.open(name, 'rb')
+							new_snippets.append(parse_snippet(f, ext))
+							f.close()
 			except:
 				pass
 
@@ -70,7 +90,6 @@ class Sniptastic(sublime_plugin.TextCommand):
 
 		items = [s.desc for s in candidates]
 
-		print candidates, len(snippets)
 		def callback(idx):
 			if idx == -1: return # -1 means the menu was canceled
 			self.view.run_command('insert_snippet', {'contents':candidates[idx].code})
