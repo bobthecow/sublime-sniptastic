@@ -18,7 +18,11 @@ class Snippet:
 	def preview(self):
 		preview = ''
 		code = self.code
-		l = len(code)
+
+		parse_max = 80
+		return_max = 60
+
+		l = min(len(code), parse_max)
 		i = 0
 		escape = False
 		brackets = 0
@@ -48,11 +52,11 @@ class Snippet:
 				preview += c
 
 		preview = whitespace.sub(' ', preview).strip()
-		word_boundary = preview[:60].rsplit(' ', 1)[0]
-		if len(word_boundary) > 50 or len(preview) < 50:
+		word_boundary = preview[:return_max].rsplit(' ', 1)[0]
+		if len(word_boundary) > return_max or len(preview) < return_max:
 			return word_boundary
 		else:
-			return preview[:60]
+			return preview[:return_max]
 
 def parse_snippet(f, ext):
 	if ext == '.sublime-snippet':
