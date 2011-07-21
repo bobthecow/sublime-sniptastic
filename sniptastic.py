@@ -1,9 +1,40 @@
-import sublime_plugin
+import sublime, sublime_plugin
+import os
+from xml.etree import ElementTree
 
-snippets = {
-	'foo':{'code':'if ($1) {$2; $3}', 'scope':'source'},
-	'bar':{'code':'class $1 extends $2 {\n\t$3\n}', 'scope':'source'}
-}
+snippets = []
+
+class Snippet:
+	def __init__(self, desc, content, tab, scopes):
+		self.desc = desc
+		self.code = content
+		self.tab = tab
+		self.scopes = scopes
+
+def find_snippets():
+	global snippets
+
+	new_snippets = []
+	for root, dirs, files in os.walk(sublime.packages_path()):
+		for name in files:
+			try:
+				ext = os.path.splitext(name)[-1]
+				if ext == '.sublime-snippet':
+					path = os.path.join(root, name)
+					tree = ElementTree.parse(path)
+
+					description = tree.find('description').text
+					content = tree.find('content').text
+					tabTrigger = tree.find('tabTrigger').text
+					scope = tree.find('scope').text.split(', ')
+
+					new_snippets.append(Snippet(description, content, tabTrigger, scope))
+			except:
+				pass
+
+	snippets = new_snippets
+
+find_snippets()
 
 class Sniptastic(sublime_plugin.TextCommand):
 	def run(self, edit):
@@ -17,10 +48,17 @@ class Sniptastic(sublime_plugin.TextCommand):
 				scope.append(section)
 				scopes.append('.'.join(scope))
 
-		candidates = [snippet for snippet in snippets if snippets[snippet]['scope'] in scopes]
+		candidates = []
+		for s in snippets:
+			for scope in s.scopes:
+				if scope in scopes:
+					candidates.append(s)
+
+		items = [s.desc for s in candidates]
+
+		print candidates, len(snippets)
 		def callback(idx):
 			if idx == -1: return # -1 means the menu was canceled
-			snippet = candidates[idx]
-			self.view.run_command('insert_snippet', {'contents':snippets[snippet]['code']})
+			self.view.run_command('insert_snippet', {'contents':candidates[idx].code})
 
-		view.window().show_quick_panel(candidates, callback)
+		view.window().show_quick_panel(items, callback)
