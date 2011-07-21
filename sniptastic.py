@@ -1,5 +1,6 @@
 import sublime, sublime_plugin
 import os
+import plistlib
 from xml.etree import ElementTree
 
 snippets = []
@@ -11,6 +12,25 @@ class Snippet:
 		self.tab = tab
 		self.scopes = scopes
 
+def parse_snippet(path):
+	ext = os.path.splitext(path)[-1]
+	if ext == '.sublime-snippet':
+		tree = ElementTree.parse(path)
+
+		desc = tree.find('description').text
+		content = tree.find('content').text
+		trigger = tree.find('tabTrigger').text
+		scope = tree.find('scope').text.split(', ')
+
+	elif ext == '.tmSnippet':
+		plist = plistlib.readPlist(path)
+		desc = plist['name']
+		content = plist['content']
+		trigger = plist['tabTrigger']
+		scope = plist['scope']
+	
+	return Snippet(desc, content, trigger, scope)
+
 def find_snippets():
 	global snippets
 
@@ -19,16 +39,10 @@ def find_snippets():
 		for name in files:
 			try:
 				ext = os.path.splitext(name)[-1]
-				if ext == '.sublime-snippet':
+				if ext in ('.sublime-snippet', '.tmSnippet'):
 					path = os.path.join(root, name)
-					tree = ElementTree.parse(path)
+					new_snippets.append(parse_snippet(path))
 
-					description = tree.find('description').text
-					content = tree.find('content').text
-					tabTrigger = tree.find('tabTrigger').text
-					scope = tree.find('scope').text.split(', ')
-
-					new_snippets.append(Snippet(description, content, tabTrigger, scope))
 			except:
 				pass
 
