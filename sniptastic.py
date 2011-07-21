@@ -31,6 +31,18 @@ def parse_snippet(f, ext):
 	
 	return Snippet(desc, content, trigger, scope)
 
+def read_zip(path):
+	results = []
+	zipf = ZipFile(path, 'r')
+	for name in zipf.namelist():
+		ext = os.path.splitext(name)[-1]
+		if ext in ('.sublime-snippet', '.tmSnippet'):
+			f = zipf.open(name, 'rb')
+			results.append(parse_snippet(f, ext))
+			f.close()
+	
+	return results
+
 def find_snippets():
 	global snippets
 
@@ -45,6 +57,8 @@ def find_snippets():
 					f = open(path, 'rb')
 					new_snippets.append(parse_snippet(f, ext))
 					f.close()
+				elif ext == '.sublime-package':
+					new_snippets += read_zip(path)
 
 			except:
 				pass
@@ -56,13 +70,7 @@ def find_snippets():
 				ext = os.path.splitext(name)[-1]
 				if ext == '.sublime-package':
 					path = os.path.join(root, name)
-					zipf = ZipFile(path, 'r')
-					for name in zipf.namelist():
-						ext = os.path.splitext(name)[-1]
-						if ext in ('.sublime-snippet', '.tmSnippet'):
-							f = zipf.open(name, 'rb')
-							new_snippets.append(parse_snippet(f, ext))
-							f.close()
+					new_snippets += read_zip(path)
 			except:
 				pass
 
