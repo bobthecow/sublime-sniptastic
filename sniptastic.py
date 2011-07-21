@@ -81,7 +81,6 @@ find_snippets()
 class Sniptastic(sublime_plugin.TextCommand):
 	def run(self, edit):
 		view = self.view
-		view.run_command('single_selection')
 		names = self.view.scope_name(self.view.sel()[0].b)
 		scopes = []
 		for name in names.split(' '):
