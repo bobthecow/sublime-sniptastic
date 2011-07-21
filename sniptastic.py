@@ -140,7 +140,7 @@ class Sniptastic(sublime_plugin.TextCommand):
 				if scope in scopes:
 					candidates.append(s)
 
-		items = [[s.desc, s.preview()] for s in candidates]
+		items = [['%s { %s }' % (s.tab, s.desc), '\t' + s.preview()] for s in candidates]
 
 		def callback(idx):
 			if idx == -1: return # -1 means the menu was canceled
