@@ -19,6 +19,7 @@ class Sniptastic(sublime_plugin.TextCommand):
 
 		candidates = [snippet for snippet in snippets if snippets[snippet]['scope'] in scopes]
 		def callback(idx):
+			if idx == -1: return # -1 means the menu was canceled
 			snippet = candidates[idx]
 			self.view.run_command('insert_snippet', {'contents':snippets[snippet]['code']})
 
