@@ -102,13 +102,13 @@ def find_snippets():
 					f = open(path, 'rb')
 					new_snippets.append(parse_snippet(f, ext))
 					f.close()
-				elif ext == '.sublime-package':
+				elif ext in ('.sublime-package', '.tmBundle'):
 					new_snippets += read_zip(path)
 
 			except:
 				pass
 	
-	# Installed Packages folder
+	# Installed Packages
 	for root, dirs, files in os.walk(sublime.installed_packages_path()):
 		for name in files:
 			try:
